@@ -1,0 +1,65 @@
+#+TITLE: swagg.el
+
+/swagg.el/ is an Emacs package that lets you fetch and interact with OpenAPI (formerly Swagger) definitions. You can think of it like the normal Swagger UI that your app has but works for multiple definitions and it's right inside your Emacs frame!
+
+Currently it's still WIP although if you wan't to test it, don't hesitate to contact about the issues you may find.
+
+* Installation
+
+#+begin_src elisp
+  ;; Using straight:
+  (use-package swagg :straight (:host github :repo "isamert/swagg.el"))
+
+  ;; Using quelpa:
+  (use-package swagg :quelpa (swagg :fetcher github :repo "isamert/swagg.el"))
+#+end_src
+
+* Basic usage
+
+Set the variable ~swagg-definitions~. Here I added Swagger definitions for GitHub and GitLab. Notice that /swagg.el/ supports both ~json~ and ~yaml~ definitions. Definition files may be local files too.
+
+#+begin_src elisp
+  (setq
+   swagg-definitions
+   '((:name "GitHub"
+      :json "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"
+      :base "https://api.github.com")
+     (:name "GitLab"
+      :yaml "https://gitlab.com/gitlab-org/gitlab/-/raw/master/doc/api/openapi/openapi.yaml"
+      :base "https://gitlab.com/api")))
+#+end_src
+
+That's it. Now you can use the following functions:
+
+- ~swagg-make-request~ :: Let' you interactively select an endpoint, using ~completing-read~ and then asks interactively for all required query strings, query parameters etc. and makes the request. Result of the request is shown in a separate special buffer. Only response body is shown. If you want to display headers, call ~swagg-display-headers~ in the response buffer.
+- ~swagg-insert-rest-block~ :: Same as above, but instead of making the request, insert rest style request string that you can use with [[https://github.com/federicotdn/verb][verb]], [[https://github.com/pashky/restclient.el][restlient]], [[https://github.com/zweifisch/ob-http][ob-http]] etc. Now you can utilize one of these packages to send your request.
+
+Note that /swagg.el/ caches the definitions on the first fetch. If your definition changes, you may need to call ~swagg-invalidate-cache~ function.
+
+* Customization
+
+Please do ~M-x customize-group swagg RET~ to see all customization options. Most of them are pretty self-explanatory. Here, I will go over some more obscure customizations.
+
+** Binding variables
+
+Each time you call one of the interactive functions and select and endpoint to work on, you'll be prompted for each variable that endpoint requires. Entering some of these variables, like authentication headers, can become repetitive. For this, you can pre-bind these variables while setting the definitions:
+
+#+begin_src elisp
+  (setq
+   swagg-definitions
+   '((:name "..."
+      :json "..."
+      :base "..."
+      ;; To bind query parameters:
+      :query '(param1 "somevalue"
+               param2 "somevalue2")
+      ;; To bind headers:
+      :header '(token "12345"
+                another-header "value")
+      ;; To bind anything with given name:
+      :any '(param "22"
+             token "000"))
+     ...))
+#+end_src
+
+When you bind parameters like this, they will appear as the default string while constructing the request. If you want them to be never asked and automatically accepted as given parameters, set ~swagg-auto-accept-bound-values~ to a non nil value.
