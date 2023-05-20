@@ -6,7 +6,7 @@
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
-;; Package-Requires: ((emacs "28.1"))
+;; Package-Requires: ((emacs "27.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ See `swagg-remember-inputs'.")
 ;;; Helpers
 
 (defun swagg-alist-path-get (paths alist)
-  (if (length= paths 1)
+  (if (eq (length paths) 1)
       (alist-get (car paths) alist)
     (swagg-alist-path-get (seq-drop paths 1) (alist-get (car paths) alist))))
 
@@ -204,6 +204,7 @@ TYPE can be any symbol, possibly `:header', `:query' or `:path'."
              path
              (propertize (or (alist-get 'summary info) "") 'face 'italic)))
    :group
+   ;; TODO use swagger tag for grouping instead of path based grouping
    (lambda (cand transform)
      (if transform
          cand
@@ -347,7 +348,7 @@ TYPE can be any symbol, possibly `:header', `:query' or `:path'."
   "Swagg response mode."
   :lighter " SRM"
   :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c h") #'swagg-display-headers)
+            (define-key map (kbd "C-c #") #'swagg-display-headers)
             map))
 
 (defun swagg--get-buffer-create-for-request (request)
