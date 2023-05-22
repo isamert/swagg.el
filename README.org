@@ -38,7 +38,7 @@ Note that /swagg.el/ caches the definitions on the first fetch. If your definiti
 
 * Customization
 
-Please do ~M-x customize-group swagg RET~ to see all customization options. Most of them are pretty self-explanatory. Here, I will go over some more obscure customizations.
+Please do ~M-x customize-group swagg RET~ to see all customization options. Most of them are pretty self-explanatory. Here, I will go over some more obscure customizations:
 
 ** Binding variables
 

@@ -47,36 +47,97 @@
   :prefix "swagg-"
   :group 'utils)
 
-;; TODO: support .servers, like:
+;; TODO: support .servers property defined in the swagger file, like:
 ;; (servers
 ;;  ((url . "https://gitlab.com/api/")))
 (defcustom swagg-definitions '()
-  "TODO: document this"
+  "A list of Swagger definitions, where each definition is a property list.
+Each list may have one or more of the following keys:
+
+- :name (required): Name of the API
+- :base (required): Base URL of the API.
+- :json OR :yaml (required): URL of the Swagger JSON or YAML file.
+- :header (optional): A property list containing default header
+  values.  If a request made to the API contains a header
+  parameter named X, swagg first checks if the :header property
+  list contains a value for X. If found, the value is used as the
+  default value.  If not found, the user is prompted to enter the
+  value for X. X being a hypothetical example here, works for any
+  header keys.
+- :query (optional): A property list containing default query
+  parameter values.  Similar to the :header property list, swagg
+  first checks this list for a default value for any query
+  parameter encountered in a request.  If not found, prompts the
+  user to enter the value for the query parameter.
+- :any (optional): A property list containing default header and
+  query parameter values.  Its structure is the same as :header or
+  :query.  Any parameter found in the request is checked first in
+  this property list.  If not found, prompts the user to enter a
+  value.
+
+Here's an example of a Swagger definition:
+
+  (:name \"GitHub API\"
+    :json \"https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json\"
+    :base \"https://api.github.com\"
+    :header (Authorization \"Bearer secret-token\"))
+
+This defines an API with the name \"GitHub API\".  It uses the
+Swagger JSON file located at the given URL as its documentation.
+The base URL of this API is \"https://api.github.com\".  The
+`:header` property list contains a default value for the
+\"Authorization\" header parameter.  If a request is made to this
+API and contains the \"Authorization\" header, the default value
+of \"Bearer secret-token\" is used.  Otherwise, the user is
+prompted to enter the value for this header parameter."
   :type 'list
   :group 'swagg)
 
 (defcustom swagg-use-unique-buffer-per-request nil
-  "TODO: document this"
+  "Wheter to use a unique buffer name for each request.
+This effects requests made with `swagg-make-request'.  You are,
+of course, free to keep this as nil and call `rename-buffer' when
+you want to keep the result of the request as a seperate buffer."
   :type 'boolean
   :group 'swagg)
 
 (defcustom swagg-rest-block-prelude ""
-  "TODO: document this"
+  "Text to insert before the rest call inserted by `swagg-insert-rest-block'.
+For example, you can set this to
+
+  #+begin_src verb :op send\n
+
+To wrap it into org babel block.  Also see `swagg-rest-block-postlude'."
   :type 'string
   :group 'swagg)
 
 (defcustom swagg-rest-block-postlude ""
-  "TODO: document this"
+  "Text to insert after the rest call inserted by `swagg-insert-rest-block'.
+For example, you can set this to
+
+  \n#+end_src
+
+To wrap it into org babel block.  Also see `swagg-rest-block-prelude'."
   :type 'string
   :group 'swagg)
 
 (defcustom swagg-remember-inputs t
-  "TODO: document this"
+  "Whether to remember inputs for paremeters you entered before.
+When this is non-nil, any parameter you entered will be
+remembered and will be presented as default value next time you
+need to enter it.  This cache is kept only for the current
+session.  Please see `swagg-definitions' to have a persistent
+default value provider."
   :type 'string
   :group 'swagg)
 
-(defcustom swagg-auto-accept-bound-values t
-  "TODO: document this"
+(defcustom swagg-auto-accept-bound-values nil
+  "Whether to automatically accept bound parameters.
+If this is non-nil, parameters bound in :headers, :query or :any
+in the `swagg-definitions' will be used for the request, without
+asking any confirmation.  Otherwise swagg will use these values
+as default but it will still ask you to confirm or edit this
+default value first."
   :type 'boolean
   :group 'swagg)
 
@@ -108,17 +169,17 @@ See `swagg-remember-inputs'.")
 
 ;;; Helpers
 
-(defun swagg-alist-path-get (paths alist)
+(defun swagg--alist-path-get (paths alist)
   (if (eq (length paths) 1)
       (alist-get (car paths) alist)
-    (swagg-alist-path-get (seq-drop paths 1) (alist-get (car paths) alist))))
+    (swagg--alist-path-get (seq-drop paths 1) (alist-get (car paths) alist))))
 
 (cl-defun swagg--completing-read-object
     (prompt objects &key (formatter #'identity) category (sort? t) group def)
   "Same as `completing-read' but applies FORMATTER to every object
-and propertizes candidates with the actual object so that they
-can be retrieved later by embark actions. Also adds category
-metadata to each candidate, if given."
+  and propertizes candidates with the actual object so that they
+  can be retrieved later by embark actions. Also adds category
+  metadata to each candidate, if given."
   (let* ((object-table
           (make-hash-table :test 'equal :size (length objects)))
          (object-strings
@@ -163,9 +224,10 @@ metadata to each candidate, if given."
 ;; TODO: Add granularity: '(definition name type)
 (cl-defun swagg--read-string (prompt &key name type)
   "Like `read-string' but has swagg specific cache.
-TYPE can be any symbol, possibly `:header', `:query' or `:path'."
+  TYPE can be any symbol, possibly `:header', `:query' or `:path'."
   ;; TODO support alists for `bound-value'
   (let* ((bound-value (plist-get
+                       ;; FIXME: instead of or'ing, merge the found (or nil) type-specific list with :any list
                        (or (plist-get swagg--def type)
                            (plist-get swagg--def :any))
                        (intern name)))
@@ -263,7 +325,7 @@ TYPE can be any symbol, possibly `:header', `:query' or `:path'."
             (t "???")))))))
 
 (defun swagg--resolve-ref (swagger ref)
-  (swagg-alist-path-get
+  (swagg--alist-path-get
    (--map (intern it) (s-split "/" (string-trim-left ref "#/")))
    swagger))
 
@@ -365,8 +427,8 @@ TYPE can be any symbol, possibly `:header', `:query' or `:path'."
     (insert (request-response-data response))
     (pcase (-some->> (request-response-header response "content-type")
              (s-split ";")
-             (car)
-             (downcase))
+  (car)
+  (downcase))
       ("application/json"
        (json-pretty-print-buffer)
        (json-mode))
@@ -440,7 +502,6 @@ TYPE can be any symbol, possibly `:header', `:query' or `:path'."
 ;;; Interactive - User level
 
 (defun swagg-make-request (def)
-  "For given definition DEF, make a request"
   (interactive (list (swagg--select-definition)))
   (swagg--with-def def
     (let ((req (swagg--req-builder def)))
