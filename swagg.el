@@ -555,20 +555,22 @@ the definition as it's defined in `swagg-definitions'."
          (definition (plist-get selected definition-type))
          (name (plist-get selected :name))
          (swagger
-          (with-memoization (alist-get name swagg--json-cache nil nil #'equal)
-            (if (file-exists-p definition)
-                (with-temp-buffer
-                  (insert-file-contents definition)
-                  (swagg--definition-parse-buffer definition-type))
-              (let (result)
-                (request definition
-                  :sync t
-                  :parser (apply-partially #'swagg--definition-parse-buffer definition-type)
-                  :complete (cl-function
-                             (lambda (&key status data &allow-other-keys)
-                               ;; TODO: Handle status
-                               (setq result data))))
-                result)))))
+          (if-let (x (alist-get name swagg--json-cache nil nil #'equal))
+              x
+            (setf (alist-get name swagg--json-cache nil nil #'equal)
+                  (if (file-exists-p definition)
+                      (with-temp-buffer
+                        (insert-file-contents definition)
+                        (swagg--definition-parse-buffer definition-type))
+                    (let (result)
+                      (request definition
+                        :sync t
+                        :parser (apply-partially #'swagg--definition-parse-buffer definition-type)
+                        :complete (cl-function
+                                   (lambda (&key status data &allow-other-keys)
+                                     ;; TODO: Handle status
+                                     (setq result data))))
+                      result))))))
     `(,@selected :swagger ,swagger)))
 
 (defun swagg-invalidate-cache ()
