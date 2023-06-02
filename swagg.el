@@ -32,6 +32,7 @@
 (require 'f)
 (require 'json-mode)
 (require 'yaml)
+(require 'compat-29)
 
 
 ;; Notes
@@ -224,7 +225,9 @@ See `swagg-remember-inputs'.")
 ;; TODO: Add granularity: '(definition name type)
 (cl-defun swagg--read-string (prompt &key name type)
   "Like `read-string' but has swagg specific cache.
-  TYPE can be any symbol, possibly `:header', `:query' or `:path'."
+TYPE can be any symbol, possibly `:header', `:query' or `:path'.
+NAME is the name of the query/header parameter that is
+cached.  PROMPT is passed to `read-string' as-is."
   ;; TODO support alists for `bound-value'
   (let* ((bound-value (plist-get
                        ;; FIXME: instead of or'ing, merge the found (or nil) type-specific list with :any list
@@ -555,22 +558,20 @@ the definition as it's defined in `swagg-definitions'."
          (definition (plist-get selected definition-type))
          (name (plist-get selected :name))
          (swagger
-          (if-let (x (alist-get name swagg--json-cache nil nil #'equal))
-              x
-            (setf (alist-get name swagg--json-cache nil nil #'equal)
-                  (if (file-exists-p definition)
-                      (with-temp-buffer
-                        (insert-file-contents definition)
-                        (swagg--definition-parse-buffer definition-type))
-                    (let (result)
-                      (request definition
-                        :sync t
-                        :parser (apply-partially #'swagg--definition-parse-buffer definition-type)
-                        :complete (cl-function
-                                   (lambda (&key status data &allow-other-keys)
-                                     ;; TODO: Handle status
-                                     (setq result data))))
-                      result))))))
+          (with-memoization (alist-get name swagg--json-cache nil nil #'equal)
+            (if (file-exists-p definition)
+                (with-temp-buffer
+                  (insert-file-contents definition)
+                  (swagg--definition-parse-buffer definition-type))
+              (let (result)
+                (request definition
+                  :sync t
+                  :parser (apply-partially #'swagg--definition-parse-buffer definition-type)
+                  :complete (cl-function
+                             (lambda (&key status data &allow-other-keys)
+                               ;; TODO: Handle status
+                               (setq result data))))
+                result)))))
     `(,@selected :swagger ,swagger)))
 
 (defun swagg-invalidate-cache ()
