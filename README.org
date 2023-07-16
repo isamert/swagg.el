@@ -21,12 +21,12 @@ Set the variable ~swagg-definitions~. Here I added Swagger definitions for GitHu
 #+begin_src elisp
   (setq
    swagg-definitions
-   '(( :name "GitHub"
-       :json "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"
-       :base "https://api.github.com")
-     ( :name "GitLab"
-       :yaml "https://gitlab.com/gitlab-org/gitlab/-/raw/master/doc/api/openapi/openapi.yaml"
-       :base "https://gitlab.com/api")))
+   '((:name "GitHub"
+      :json "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"
+      :base "https://api.github.com")
+     (:name "GitLab"
+      :yaml "https://gitlab.com/gitlab-org/gitlab/-/raw/master/doc/api/openapi/openapi.yaml"
+      :base "https://gitlab.com/api")))
 #+end_src
 
 That's it. Now you can use the following functions:
@@ -47,18 +47,18 @@ Each time you call one of the interactive functions and select and endpoint to w
 #+begin_src elisp
   (setq
    swagg-definitions
-   '(( :name "..."
-       :json "..."
-       :base "..."
-       ;; To bind query parameters:
-       :query '( param1 "somevalue"
-                 param2 "somevalue2")
-       ;; To bind headers:
-       :header '( token "12345"
-                  another-header "value")
-       ;; To bind anything with given name:
-       :any '( param "22"
-               token "000"))
+   '((:name "..."
+      :json "..."
+      :base "..."
+      ;; To bind query parameters:
+      :query '( param1 "somevalue"
+                param2 "somevalue2")
+      ;; To bind headers:
+      :header '( token "12345"
+                 another-header "value")
+      ;; To bind anything with given name:
+      :any '( param "22"
+              token "000"))
      ...))
 #+end_src
 
