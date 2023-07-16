@@ -85,7 +85,8 @@ Each list may have one or more of the following keys:
 Here's an example of a Swagger definition:
 
   (:name \"GitHub API\"
-    :json \"https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json\"
+    :json \"https://raw.githubusercontent.com/github/rest-api-description\
+/main/descriptions/api.github.com/api.github.com.json\"
     :base \"https://api.github.com\"
     :header (Authorization \"Bearer secret-token\"))
 
@@ -179,17 +180,24 @@ See `swagg-remember-inputs'.")
 
 ;;; Helpers
 
-(defun swagg--alist-path-get (paths alist)
-  (if (eq (length paths) 1)
-      (alist-get (car paths) alist)
-    (swagg--alist-path-get (seq-drop paths 1) (alist-get (car paths) alist))))
+(defun swagg--alist-path-get (path alist)
+  "Get the value associated with a specific PATH in ALIST.
+
+>> (let ((alist `((a . ((b . ((c . d)))))))
+         (path `(a b c)))
+    (swagg--alist-path-get path alist))
+=> d"
+  (if (eq (length path) 1)
+      (alist-get (car path) alist)
+    (swagg--alist-path-get (seq-drop path 1) (alist-get (car path) alist))))
 
 (cl-defun swagg--completing-read-object
     (prompt objects &key (formatter #'identity) category (sort? t) group def)
-  "Same as `completing-read' but applies FORMATTER to every object
-  and propertizes candidates with the actual object so that they
-  can be retrieved later by embark actions. Also adds category
-  metadata to each candidate, if given."
+  "`completing-read' with formatter and sort control.
+Applies FORMATTER to every object in OBJECTS and propertizes
+candidates with the actual object so that they can be retrieved
+later by embark actions.  Also adds category metadata to each
+candidate, if given.  PROMPT passed to `completing-read' as is."
   (let* ((object-table
           (make-hash-table :test 'equal :size (length objects)))
          (object-strings
@@ -216,12 +224,18 @@ See `swagg-remember-inputs'.")
 
 (defvar swagg--def nil)
 (defmacro swagg--with-def (def &rest forms)
-  "Possibly a bad idea, but here we go."
+  "Perform FORMS with a given definition DEF.
+Use `swagg--def' as an internal variable to hold DEF for the
+duration of the forms.  This is useful for passing down
+definition to functions called deep down.  Possibly a bad idea
+but it works for now."
   (declare (indent 1))
   `(let ((swagg--def ,def))
      ,@forms))
 
 (defun swagg--definition-parse-buffer (type)
+  "Parse the contents of the buffer according to TYPE.
+TYPE can be either :json or :yaml."
   (if (eq type :yaml)
       (yaml-parse-string
        (buffer-string)
@@ -259,6 +273,7 @@ cached.  PROMPT is passed to `read-string' as-is."
 ;;; Core
 
 (defun swagg--select-op (swagger)
+  "Prompt the user to select an operation from the given SWAGGER spec."
   (swagg--completing-read-object
    "Select operation: "
    (--mapcat
@@ -298,13 +313,18 @@ cached.  PROMPT is passed to `read-string' as-is."
         "home")))))
 
 (defun swagg--split-once (sep s)
+  "Split string S into two substrings at the first occurrence of SEP.
+
+>> (swagg--split-once \" \" \"hello cruel world\")
+=> (\"hello\" \"cruel world\")"
   (s-split-up-to sep s 1 t))
 
-(defun swagg--get-obj-definition (swagger schema-path)
-  (let-alist swagger
-    (alist-get (intern (file-name-nondirectory (directory-file-name schema-path))) .components.schemas)))
-
 (defun swagg--build-schema (swagger schema)
+  "Build a JSON schema based on the provided Swagger SCHEMA.
+- SWAGGER: The Swagger object representing the entire API.
+- SCHEMA: The specific schema to build.
+
+Return a string representing the JSON schema."
   (let* ((example (alist-get 'example schema))
          (enum (alist-get 'enum schema))
          (type (alist-get 'type schema))
