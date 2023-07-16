@@ -6,7 +6,8 @@
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (json "1.5") (yaml "0.5.1"))
+;; Keywords: tools,convenience
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -29,10 +30,9 @@
 
 (require 'request)
 (require 'dash)
-(require 'f)
-(require 'json-mode)
+(require 'json)
 (require 'yaml)
-(require 'compat-29)
+(require 'compat)
 
 
 ;; Notes
@@ -293,7 +293,7 @@ cached.  PROMPT is passed to `read-string' as-is."
 
 (defun swagg--get-obj-definition (swagger schema-path)
   (let-alist swagger
-    (alist-get (intern (f-filename schema-path)) .components.schemas)))
+    (alist-get (intern (file-name-nondirectory (directory-file-name schema-path))) .components.schemas)))
 
 (defun swagg--build-schema (swagger schema)
   (let* ((example (alist-get 'example schema))
@@ -430,11 +430,14 @@ cached.  PROMPT is passed to `read-string' as-is."
     (insert (request-response-data response))
     (pcase (-some->> (request-response-header response "content-type")
              (s-split ";")
-  (car)
-  (downcase))
+             (car)
+             (downcase))
       ("application/json"
        (json-pretty-print-buffer)
-       (json-mode))
+       (cond
+        ((require 'json-ts-mode nil t) (json-ts-mode))
+        ((require 'json-mode nil t) (json-mode))
+        (t (prog-mode))))
       (_ (prog-mode)))
     (setq
      header-line-format
