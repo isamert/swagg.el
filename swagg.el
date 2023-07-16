@@ -33,6 +33,7 @@
 (require 'json)
 (require 'yaml)
 (require 'compat)
+(require 'org)
 
 
 ;; Notes
@@ -96,8 +97,8 @@ prompted to enter the value for this header parameter."
 
 (defcustom swagg-use-unique-buffer-per-request nil
   "Wheter to use a unique buffer name for each request.
-This effects requests made with `swagg-make-request'.  You are,
-of course, free to keep this as nil and call `rename-buffer' when
+This effects requests made with `swagg-request'.  You are, of
+course, free to keep this as nil and call `rename-buffer' when
 you want to keep the result of the request as a seperate buffer."
   :type 'boolean
   :group 'swagg)
@@ -144,6 +145,9 @@ default value first."
 
 
 ;;; Internal
+
+(defconst swagg--rest-buffer "*swagg-request*"
+  "Name of the buffer where REST blocks are appended.")
 
 (defvar swagg--result-buffer-name "*swagg-result*"
   "Default buffer name for displaying response data.")
@@ -507,7 +511,7 @@ cached.  PROMPT is passed to `read-string' as-is."
 
 ;;; Interactive - User level
 
-(defun swagg-make-request (def)
+(defun swagg-request (def)
   (interactive (list (swagg--select-definition)))
   (swagg--with-def def
     (let ((req (swagg--req-builder def)))
@@ -520,31 +524,41 @@ cached.  PROMPT is passed to `read-string' as-is."
                    (lambda (&key response &allow-other-keys)
                      (swagg--display-response req response)))))))
 
-(defun swagg-insert-rest-block (def)
-  (interactive (list (swagg--select-definition)))
+(defun swagg--generate-rest-block (def)
   (swagg--with-def def
     (let ((req (swagg--req-builder def)))
-      (insert
-       (let-alist (plist-get req :info)
-         (s-trim
-          (concat
-           swagg-rest-block-prelude
-           (swagg--req-type req)
-           " "
-           (swagg--req-gen-url req)
-           (if-let (headers (or (plist-get req :headers) nil))
-               (concat "\n"
-                       (s-join "\n"
-                               (mapcar (-lambda ((key . val))
-                                         (format "%s: %s" key val))
-                                       headers)))
-             "")
-           (if-let* ((body (swagg--gen-body
-                            (plist-get def :swagger)
-                            (plist-get req :info)))
-                     ((not (s-blank? body))))
-               (concat "\n\n" body) "")
-           swagg-rest-block-postlude)))))))
+      (s-trim
+       (concat
+        swagg-rest-block-prelude
+        (swagg--req-type req)
+        " "
+        (swagg--req-gen-url req)
+        (when-let* ((headers (plist-get req :headers)))
+          (concat "\n"
+                  (s-join "\n"
+                          (mapcar (-lambda ((key . val))
+                                    (format "%s: %s" key val))
+                                  headers))))
+        (when-let* ((body (swagg--gen-body
+                           (plist-get def :swagger)
+                           (plist-get req :info))))
+          (concat "\n\n" body))
+        swagg-rest-block-postlude)))))
+
+(defun swagg-request-with-rest-block (def &optional arg)
+  (interactive (list (swagg--select-definition)))
+  (let ((block (swagg--generate-rest-block def)))
+    (if arg
+        (insert block)
+      (with-current-buffer (get-buffer-create swagg--rest-buffer)
+        (org-mode)
+        (goto-char (point-max))
+        (org-insert-heading nil t)
+        (insert (format-time-string "%Y-%m-%d %a %H:%M") "\n\n")
+        (insert block "\n"))))
+  (unless arg
+    (switch-to-buffer-other-window swagg--rest-buffer)
+    (goto-char (point-max))))
 
 
 ;;; Interactive helpers
