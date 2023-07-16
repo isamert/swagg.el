@@ -31,8 +31,8 @@ Set the variable ~swagg-definitions~. Here I added Swagger definitions for GitHu
 
 That's it. Now you can use the following functions:
 
-- ~swagg-make-request~ :: Let' you interactively select an endpoint, using ~completing-read~ and then asks interactively for all required query strings, query parameters etc. and makes the request. Result of the request is shown in a separate special buffer. Only response body is shown. If you want to display headers, call ~swagg-display-headers~ in the response buffer.
-- ~swagg-insert-rest-block~ :: Same as above, but instead of making the request, insert rest style request string that you can use with [[https://github.com/federicotdn/verb][verb]], [[https://github.com/pashky/restclient.el][restlient]], [[https://github.com/zweifisch/ob-http][ob-http]] etc. Now you can utilize one of these packages to send your request.
+- ~swagg-request~ :: Lets you interactively select an endpoint, using ~completing-read~ and then asks interactively for all required query strings, query parameters etc. and makes the request. Result of the request is shown in a separate special buffer. Only response body is shown. If you want to display headers, call ~swagg-display-headers~ in the response buffer.
+- ~swagg-request-with-rest-block~ :: Same as above, but instead of making the request, insert rest style request string that you can use with [[https://github.com/federicotdn/verb][verb]], [[https://github.com/pashky/restclient.el][restlient]], [[https://github.com/zweifisch/ob-http][ob-http]] etc. Now you can utilize one of these packages to send your request.
 
 Note that /swagg.el/ caches the definitions on the first fetch. If your definition changes, you may need to call ~swagg-invalidate-cache~ function.
 
