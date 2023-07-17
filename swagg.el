@@ -6,7 +6,7 @@
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
-;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (json "1.5") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (json "1.5") (yaml "0.5.1") (s "1.13.1"))
 ;; Keywords: tools,convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@
 (require 'yaml)
 (require 'compat)
 (require 'org)
+(require 's)
 
 
 ;; Notes
@@ -180,6 +181,12 @@ See `swagg-remember-inputs'.")
 
 ;;; Helpers
 
+(defvar swagg--dbg t)
+(defun swagg--dbg (msg &rest rest)
+  "Print MSG with REST if variable `swagg--dbg' is non-nil."
+  (when swagg--dbg
+    (apply #'message `(,(format "(swagg) %s" msg) ,@rest))))
+
 (defun swagg--alist-path-get (path alist)
   "Get the value associated with a specific PATH in ALIST.
 
@@ -319,60 +326,87 @@ cached.  PROMPT is passed to `read-string' as-is."
 => (\"hello\" \"cruel world\")"
   (s-split-up-to sep s 1 t))
 
-(defun swagg--build-schema (swagger schema)
-  "Build a JSON schema based on the provided Swagger SCHEMA.
-- SWAGGER: The Swagger object representing the entire API.
-- SCHEMA: The specific schema to build.
-
-Return a string representing the JSON schema."
-  (let* ((example (alist-get 'example schema))
-         (enum (alist-get 'enum schema))
+;; NOTE: `not' keyword is not supported
+;; See URL https://swagger.io/docs/specification/data-models/oneof-anyof-allof-not/
+(defun swagg--build-schema (swagger schema &optional depth)
+  "Build a JSON based on the provided SCHEMA.
+SWAGGER is object representing the entire API."
+  (unless depth
+    (setq depth 2))
+  (let* ((enum (alist-get 'enum schema))
          (type (alist-get 'type schema))
-         (value (or example (when enum (s-join "|" enum)) (format "<%s>" type))))
+         ;; TODO Handle examples and descriptions
+         ;; (example (alist-get 'example schema))
+         (value (or
+                 (when enum
+                   (format "<%s>" (s-join "|" enum)))
+                 (format "<%s>" type))))
     (pcase type
       ("object"
-       (format "{%s}"
-               (s-join ", " (-map
-                             (-lambda ((name . child))
-                               (format
-                                "\"%s\": %s"
-                                name
-                                (swagg--build-schema swagger child)))
-                             (alist-get 'properties schema)))))
-      ("string" (format "\"%s\"" (or value "?")))
-      ("number" (or value 1))
-      ("integer" (or value 1))
+       (if-let* ((inner-indent (s-repeat depth " "))
+                 (outer-indent (s-repeat (- depth 2) " "))
+                 (properties (alist-get 'properties schema))
+                 (props (s-join (format ", \n%s" inner-indent)
+                                (-map
+                                 (-lambda ((name . child))
+                                   (format "\"%s\": %s" name (swagg--build-schema swagger child (+ 2 depth))))
+                                 properties))))
+           (format "{\n%s%s\n%s}" inner-indent props outer-indent)
+         (swagg--build-schema
+          swagger
+          ;; If don't have .properties key in the schema, then it
+          ;; means it's one of anyOf|allOf|oneOf|$ref. Removing 'type
+          ;; from schema and calling `swagg--build-schema' again
+          ;; enables us to handle this case
+          (map-delete (map-copy schema) 'type)
+          (+ 2 depth))))
+      ("string" (s-wrap value "\""))
+      ((or "number" "integer" "boolean" ) value)
       ("array" (format
                 "[%s]"
-                (swagg--build-schema swagger (alist-get 'items schema))))
+                (swagg--build-schema swagger (alist-get 'items schema) depth)))
       (_ (let-alist schema
            (cond
             (.$ref (swagg--build-schema
                     swagger
-                    (swagg--resolve-ref swagger .$ref)))
-            (.allOf (or (json-encode (alist-get 'example .allOf))
-                        (swagg--build-schema
-                         swagger
-                         (swagg--resolve-ref swagger .allOf.$ref))))
-            (t "???")))))))
+                    (swagg--resolve-ref swagger .$ref)
+                    depth))
+            (.allOf (format "<%s>" (s-join "&" (--map (swagg--build-schema swagger it depth) .allOf))))
+            (.anyOf (format "<%s>" (s-join "/" (--map (swagg--build-schema swagger it depth) .anyOf))))
+            (.oneOf (format "<%s>" (s-join "|" (--map (swagg--build-schema swagger it depth) .oneOf))))
+            (t "<?>")))))))
 
 (defun swagg--resolve-ref (swagger ref)
+  "Resolve a JSON reference in the given SWAGGER document.
+
+Takes a SWAGGER document and a REF string (in the format
+'#/path/to/reference'), and returns the referenced object in the
+SWAGGER document."
   (swagg--alist-path-get
    (--map (intern it) (s-split "/" (string-trim-left ref "#/")))
    swagger))
 
 (defun swagg--resolve-if-ref (swagger obj)
+  "If OBJ is reference resolve it in SWAGGER and return.
+Otherwise, return OBJ itself.  OBJ is a reference if it has a key
+called '$ref'"
   (if-let (ref (alist-get '$ref obj))
       (swagg--resolve-ref swagger ref)
     obj))
 
 (defun swagg--format-param-value (def value)
+  "Return a formatted parameter value based on given DEF and VALUE."
   (let-alist def
     (if (equal .in "query")
         (format "%s=%s" .name value)
       value)))
 
 (defun swagg--read-param-from-user (param-type def)
+  "Request a value for DEF from user.
+This handles formatting of the value properly (if it's an array
+etc.), also there is some caching going on for the values
+presented to user by default.  For that and for explanation of
+PARAM-TYPE see `swagg--read-string'."
   (let-alist def
     (let ((prompt (format "Enter value for `%s' (%s, \"%s\"): "
                           .name (or .type .schema.type) .description)))
@@ -391,10 +425,10 @@ Return a string representing the JSON schema."
                                          :type param-type
                                          :name .name)))))))
 
-;; TODO format resulting json
 (defun swagg--gen-body (swagger info)
-  ;; Either use requestBody.content.application/json or
-  ;; first(parameters.in === "body") as the request body
+  "Generate the request body for INFO using SWAGGER definition.
+This uses \"requestBody.content.application/json\" or
+first(parameters.in === \"body\") as the request body."
   (let-alist info
     (if-let ((body-def .requestBody.content.application/json))
         (swagg--build-schema
@@ -536,6 +570,7 @@ Return a string representing the JSON schema."
 
 ;;; Interactive - User level
 
+;; FIXME: This does not handle request body
 (defun swagg-request (def)
   (interactive (list (swagg--select-definition)))
   (swagg--with-def def
@@ -618,7 +653,7 @@ the definition as it's defined in `swagg-definitions'."
 
 (defun swagg-invalidate-cache ()
   "Invalidate swagger definition JSON cache.
-Useful if your swagger JSON has been changed."
+Useful if your swagger JSON/YAML has been changed."
   (interactive)
   (setq swagg--json-cache '()))
 
