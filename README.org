@@ -2,8 +2,6 @@
 
 /swagg.el/ is an Emacs package that lets you fetch and interact with OpenAPI (formerly Swagger) definitions. You can think of it like the normal Swagger UI that your app has but works for multiple definitions and it's right inside your Emacs frame!
 
-Currently it's still WIP although if you wan't to test it, don't hesitate to contact about the issues you may find.
-
 * Installation
 
 #+begin_src elisp
@@ -51,15 +49,17 @@ Each time you call one of the interactive functions and select and endpoint to w
       :json "..."
       :base "..."
       ;; To bind query parameters:
-      :query '( param1 "somevalue"
-                param2 "somevalue2")
+      :query '(param1 "somevalue"
+               param2 "somevalue2")
       ;; To bind headers:
-      :header '( token "12345"
-                 another-header "value")
+      :header '(token "12345"
+                another-header "value")
       ;; To bind anything with given name:
-      :any '( param "22"
-              token "000"))
+      :any (param "22"
+            token "000"))
      ...))
 #+end_src
 
 When you bind parameters like this, they will appear as the default string while constructing the request. If you want them to be never asked and automatically accepted as given parameters, set ~swagg-auto-accept-bound-values~ to a non nil value.
+
+As a side note, swagg automatically remembers the values you entered for the session, see ~swagg-remember-inputs~.
