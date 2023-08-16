@@ -497,6 +497,8 @@ first(parameters.in === \"body\") as the request body."
                                  (swagg--req-make-endpoint request)))
     (get-buffer-create swagg--result-buffer-name)))
 
+(declare-function json-ts-mode "json-ts-mode")
+(declare-function json-mode "json-mode")
 (defun swagg--display-response (request response)
   (with-current-buffer (swagg--get-buffer-create-for-request request)
     (erase-buffer)
@@ -689,7 +691,7 @@ the definition as it's defined in `swagg-definitions'."
                   :sync t
                   :parser (apply-partially #'swagg--definition-parse-buffer definition-type)
                   :complete (cl-function
-                             (lambda (&key status data &allow-other-keys)
+                             (lambda (&key _status data &allow-other-keys)
                                ;; TODO: Handle status
                                (setq result data))))
                 result)))))
