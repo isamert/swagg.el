@@ -650,7 +650,7 @@ Also see `swagg-rest-block-prelude' and
 `swagg-rest-block-postlude' to control the inserted rest block
 surroundings and `swagg-rest-block-org-header-tags' to
 automatically tag request's org-header."
-  (interactive (list (swagg--select-definition)))
+  (interactive (list (swagg--select-definition) current-prefix-arg))
   (let ((block (swagg--generate-rest-block definition)))
     (if arg
         (insert block)
