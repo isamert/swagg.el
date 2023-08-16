@@ -150,6 +150,15 @@ default value first."
   :type 'boolean
   :group 'swagg)
 
+(defcustom swagg-rest-block-org-header-tags nil
+  "Tags to set for rest block org header.
+This may be a tags string like \":aa:bb:cc:\", or a list of tags.
+This is particularly useful if you use something like verb
+package to do your requests, which requires \"verb\" tag to be
+present in the header to be able to act on them."
+  :type 'string
+  :group 'swagg)
+
 
 ;;; Internal
 
@@ -615,6 +624,8 @@ first(parameters.in === \"body\") as the request body."
         (goto-char (point-max))
         (org-insert-heading nil t)
         (insert (format-time-string "%Y-%m-%d %a %H:%M") "\n\n")
+        (when swagg-rest-block-org-header-tags
+          (org-set-tags swagg-rest-block-org-header-tags))
         (insert block "\n"))))
   (unless arg
     (switch-to-buffer-other-window swagg--rest-buffer)
