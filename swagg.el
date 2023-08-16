@@ -130,6 +130,7 @@ To wrap it into org babel block.  Also see `swagg-rest-block-prelude'."
   :type 'string
   :group 'swagg)
 
+;; TODO: savehist integration?
 (defcustom swagg-remember-inputs t
   "Whether to remember inputs for paremeters you entered before.
 When this is non-nil, any parameter you entered will be
@@ -525,6 +526,7 @@ first(parameters.in === \"body\") as the request body."
     (setq swagg--response response)))
 
 (defun swagg-display-headers ()
+  "Display headers of current response in a different buffer."
   (interactive nil swagg-response-mode)
   (pp-display-expression
    (request-response-headers swagg--response)
@@ -580,10 +582,22 @@ first(parameters.in === \"body\") as the request body."
 ;;; Interactive - User level
 
 ;; FIXME: This does not handle request body
-(defun swagg-request (def)
+(defun swagg-request (definition)
+  "Select an endpoint from Swagger DEFINITION and make a request.
+When called interactively, you'll be prompted to select a
+definition from `swagg-definitions' first.
+
+After selecting a definition and an endpoint, you'll be prompted
+to enter all path parameters and the request will be made.  The
+result will be displayed in a separate buffer.
+
+This function does not support requests with bodies.  For that,
+see `swagg-request-with-rest-block'.
+
+Also see `swagg-use-unique-buffer-per-request'."
   (interactive (list (swagg--select-definition)))
-  (swagg--with-def def
-    (let ((req (swagg--req-builder def)))
+  (swagg--with-def definition
+    (let ((req (swagg--req-builder definition)))
       (request
         (swagg--req-gen-url req)
         :type (swagg--req-type req)
@@ -614,9 +628,28 @@ first(parameters.in === \"body\") as the request body."
           (concat "\n\n" body))
         swagg-rest-block-postlude)))))
 
-(defun swagg-request-with-rest-block (def &optional arg)
+(defun swagg-request-with-rest-block (definition &optional arg)
+  "Select an endpoint from Swagger DEFINITION and make a request.
+When called interactively, you'll be prompted to select a
+definition from `swagg-definitions' first.
+
+After selecting a definition and an endpoint, you'll be prompted
+to enter all path parameters.  After that, a new (or already
+existing) `org-mode' buffer will open and your request will be
+inserted (with generated request body, if there is one) into this
+buffer.  Now you can utilize any rest client to send your
+request, like one of the following: verb, restclient.el, ob-http.
+See this project's README to learn more about the rest clients.
+
+If ARG is non-nil, then instead of inserting the request to a new
+buffer, simply insert it to current buffer.
+
+Also see `swagg-rest-block-prelude' and
+`swagg-rest-block-postlude' to control the inserted rest block
+surroundings and `swagg-rest-block-org-header-tags' to
+automatically tag request's org-header."
   (interactive (list (swagg--select-definition)))
-  (let ((block (swagg--generate-rest-block def)))
+  (let ((block (swagg--generate-rest-block definition)))
     (if arg
         (insert block)
       (with-current-buffer (get-buffer-create swagg--rest-buffer)
