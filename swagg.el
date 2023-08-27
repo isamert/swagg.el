@@ -510,7 +510,6 @@ operation object.  Parameters are requested from user."
                                  (swagg--req-make-endpoint request)))
     (get-buffer-create swagg--result-buffer-name)))
 
-(declare-function json-ts-mode "json-ts-mode")
 (declare-function json-mode "json-mode")
 (defun swagg--display-response (request response)
   "Display RESPONSE for REQUEST.
@@ -525,10 +524,8 @@ tries to display the RESPONSE according to it's content-type."
              (downcase))
       ("application/json"
        (json-pretty-print-buffer)
-       (cond
-        ((require 'json-ts-mode nil t) (json-ts-mode))
-        ((require 'json-mode nil t) (json-mode))
-        (t (prog-mode))))
+       (require 'json-mode)
+       (json-mode))
       (_ (prog-mode)))
     (setq
      header-line-format
