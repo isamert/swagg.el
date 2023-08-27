@@ -6,7 +6,7 @@
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
-;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (json "1.5") (yaml "0.5.1") (s "1.13.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (yaml "0.5.1") (s "1.13.1"))
 ;; Keywords: tools,convenience
 
 ;; This program is free software; you can redistribute it and/or modify
