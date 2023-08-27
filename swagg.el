@@ -40,6 +40,7 @@
 (require 'compat)
 (require 'org)
 (require 's)
+(require 'pp)
 
 
 ;; Notes
