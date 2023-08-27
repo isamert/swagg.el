@@ -451,6 +451,9 @@ first(parameters.in === \"body\") as the request body."
         (if schema (swagg--read-param-from-user :body def) "")))))
 
 (defun swagg--gen-query-params (swagger info)
+  "Get query params from INFO and build an alist.
+SWAGGER is the full swagger object.  INFO should be a path
+operation object.  Parameters are requested from user."
   (->>
    (alist-get 'parameters info)
    (mapcar (apply-partially #'swagg--resolve-if-ref swagger))
@@ -458,6 +461,9 @@ first(parameters.in === \"body\") as the request body."
    (mapcar (apply-partially #'swagg--read-param-from-user :query))))
 
 (defun swagg--gen-path-params (swagger info)
+  "Get path params from INFO and build an alist.
+SWAGGER is the full swagger object.  INFO should be a path
+operation object.  Parameters are requested from user."
   (->>
    (alist-get 'parameters info)
    (mapcar (apply-partially #'swagg--resolve-if-ref swagger))
@@ -465,6 +471,9 @@ first(parameters.in === \"body\") as the request body."
    (--map (cons (alist-get 'name it) (swagg--read-param-from-user :path it)))))
 
 (defun swagg--gen-headers (info)
+  "Get headers from INFO and build an alist.
+SWAGGER is the full swagger object.  INFO should be a path
+operation object.  Parameters are requested from user."
   (->>
    (alist-get 'parameters info)
    (--filter (equal (alist-get 'in it) "header"))
@@ -490,6 +499,7 @@ first(parameters.in === \"body\") as the request body."
             map))
 
 (defun swagg--get-buffer-create-for-request (request)
+  "Create response buffer for REQUEST."
   (if swagg-use-unique-buffer-per-request
       (get-buffer-create (format "*swagg: %s %s%s*"
                                  (swagg--req-type request)
@@ -500,6 +510,9 @@ first(parameters.in === \"body\") as the request body."
 (declare-function json-ts-mode "json-ts-mode")
 (declare-function json-mode "json-mode")
 (defun swagg--display-response (request response)
+  "Display RESPONSE for REQUEST.
+RESPONSE is the data returned by `request' call.  This function
+tries to display the RESPONSE according to it's content-type."
   (with-current-buffer (swagg--get-buffer-create-for-request request)
     (erase-buffer)
     (insert (request-response-data response))
@@ -538,6 +551,7 @@ first(parameters.in === \"body\") as the request body."
 ;;; swagg--req
 
 (defun swagg--req-builder (def)
+  "For DEF, create a plist containing all relevant request info."
   (-let* ((swagger (plist-get def :swagger))
           ((endpoint . (verb . info))
            (swagg--select-op swagger)))
@@ -556,6 +570,7 @@ first(parameters.in === \"body\") as the request body."
   (upcase (symbol-name (plist-get req :verb))))
 
 (defun swagg--req-make-endpoint (req)
+  "Generate endpoint path with filled parameters for REQ."
   (s-replace-regexp
    "{\\([a-zA-Z0-9_-]+\\)}"
    (lambda (substr)
@@ -570,6 +585,7 @@ first(parameters.in === \"body\") as the request body."
    (symbol-name (plist-get req :endpoint))))
 
 (defun swagg--req-gen-url (req)
+  "Generate full URL with filled parameters for REQ."
   (format
    "%s%s%s%s"
    (plist-get req :base)
@@ -610,6 +626,7 @@ Also see `swagg-use-unique-buffer-per-request'."
                      (swagg--display-response req response)))))))
 
 (defun swagg--generate-rest-block (def)
+  "Generate rest block for DEF."
   (swagg--with-def def
     (let ((req (swagg--req-builder def)))
       (s-trim
