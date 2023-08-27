@@ -678,10 +678,11 @@ automatically tag request's org-header."
         (org-mode)
         (goto-char (point-max))
         (org-insert-heading nil t)
-        (insert (format-time-string "%Y-%m-%d %a %H:%M") "\n\n")
+        (insert (format-time-string "%F %a %R"))
         (when swagg-rest-block-org-header-tags
           (org-set-tags swagg-rest-block-org-header-tags))
-        (insert block "\n"))))
+        (end-of-line)
+        (insert "\n\n" block "\n"))))
   (unless arg
     (switch-to-buffer-other-window swagg--rest-buffer)
     (goto-char (point-max))))
