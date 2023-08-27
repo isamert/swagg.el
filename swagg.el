@@ -63,25 +63,29 @@
 Each list may have one or more of the following keys:
 
 - :name (required): Name of the API
+
 - :base (required): Base URL of the API.
+
 - :json OR :yaml (required): URL of the Swagger JSON or YAML file.
-- :header (optional): A property list containing default header
-  values.  If a request made to the API contains a header
-  parameter named X, swagg first checks if the :header property
-  list contains a value for X. If found, the value is used as the
-  default value.  If not found, the user is prompted to enter the
-  value for X. X being a hypothetical example here, works for any
-  header keys.
-- :query (optional): A property list containing default query
-  parameter values.  Similar to the :header property list, swagg
-  first checks this list for a default value for any query
-  parameter encountered in a request.  If not found, prompts the
-  user to enter the value for the query parameter.
-- :any (optional): A property list containing default header and
-  query parameter values.  Its structure is the same as :header or
-  :query.  Any parameter found in the request is checked first in
-  this property list.  If not found, prompts the user to enter a
+
+- :header (optional): An alist containing default header values.
+  If a request made to the API contains a header parameter named
+  X, swagg first checks if the :header alist contains a value for
+  X. If found, the value is used as the default value.  If not
+  found, the user is prompted to enter the value for X. X being a
+  hypothetical example here, works for any header keys.  The
+  value can be a function, in that case that function will be
+  executed with no parameters and the result will be used as the
   value.
+
+- :query (optional): Like :header, but for query parameters.
+
+- :path (optional): Like :header, but for path parameters.
+
+- :any (optional): An alist containing default header, query or
+  path parameter values.  Its structure is the same as :header or
+  :query.  Any parameter found in the request is checked first in
+  this alist.  If not found, prompts the user to enter a value.
 
 Here's an example of a Swagger definition:
 
@@ -94,7 +98,7 @@ Here's an example of a Swagger definition:
 This defines an API with the name \"GitHub API\".  It uses the
 Swagger JSON file located at the given URL as its documentation.
 The base URL of this API is \"https://api.github.com\".  The
-`:header` property list contains a default value for the
+`:header` alist contains a default value for the
 \"Authorization\" header parameter.  If a request is made to this
 API and contains the \"Authorization\" header, the default value
 of \"Bearer secret-token\" is used.  Otherwise, the user is
@@ -266,14 +270,12 @@ TYPE can be either :json or :yaml."
 (cl-defun swagg--read-string (prompt &key name type)
   "Like `read-string' but has swagg specific cache.
 TYPE can be any symbol, possibly `:header', `:query' or `:path'.
-NAME is the name of the query/header parameter that is
-cached.  PROMPT is passed to `read-string' as-is."
-  ;; TODO support alists for `bound-value'
-  (let* ((bound-value (plist-get
-                       ;; FIXME: instead of or'ing, merge the found (or nil) type-specific list with :any list
-                       (or (plist-get swagg--def type)
-                           (plist-get swagg--def :any))
-                       (intern name)))
+NAME is the name of the query/header parameter that is cached.
+PROMPT is passed to `read-string' as-is."
+  (let* ((bound-value (alist-get
+                       (intern name)
+                       `(,@(plist-get swagg--def type)
+                         ,@(plist-get swagg--def :any))))
          (bound (if (functionp bound-value)
                     (funcall bound-value)
                   bound-value))
@@ -283,7 +285,8 @@ cached.  PROMPT is passed to `read-string' as-is."
           (if (and bound swagg-auto-accept-bound-values)
               bound
             (read-string prompt (or (when swagg-remember-inputs cache) bound)))))
-    (setf (alist-get cache-path swagg--read-string-cache nil nil #'equal) result)
+    (setf (alist-get cache-path swagg--read-string-cache nil nil #'equal)
+          (if (s-blank? result) nil result))
     result))
 
 

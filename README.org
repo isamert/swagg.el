@@ -1,6 +1,6 @@
 #+TITLE: swagg.el
 
-/swagg.el/ is an Emacs package that lets you fetch and interact with OpenAPI (formerly Swagger) definitions. You can think of it like the normal Swagger UI that your app has but works for multiple definitions and it's right inside your Emacs frame!
+/swagg.el/ is an Emacs package that lets you fetch and interact with OpenAPI (formerly Swagger) definitions. You can think of it like a Swagger UI that your app has but works for multiple definitions and it's right inside your Emacs frame!
 
 * Installation
 
@@ -49,14 +49,14 @@ Each time you call one of the interactive functions and select and endpoint to w
       :json "..."
       :base "..."
       ;; To bind query parameters:
-      :query '(param1 "somevalue"
-               param2 "somevalue2")
+      :query '((param1 . "somevalue")
+               (param2 . "somevalue2"))
       ;; To bind headers:
-      :header '(token "12345"
-                another-header "value")
+      :header '((token . "12345")
+                (another-header . "value"))
       ;; To bind anything with given name:
-      :any (param "22"
-            token "000"))
+      :any ((param . "22")
+            (token . "000")))
      ...))
 #+end_src
 
