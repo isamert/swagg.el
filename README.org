@@ -63,3 +63,14 @@ Each time you call one of the interactive functions and select and endpoint to w
 When you bind parameters like this, they will appear as the default string while constructing the request. If you want them to be never asked and automatically accepted as given parameters, set ~swagg-auto-accept-bound-values~ to a non nil value.
 
 As a side note, swagg automatically remembers the values you entered for the session, see ~swagg-remember-inputs~.
+
+* Demo
+
+| ~swagg-request~                                                                                    |
+|--------------------------------------------------------------------------------------------------|
+| [[file:https://github.com/isamert/swagg.el/assets/8031017/b36eb792-8f10-412b-9901-eb41f8ed5b84.gif]] |
+| [[file:https://github.com/isamert/swagg.el/assets/8031017/256f1baa-95bd-4b33-82af-e0ed79217a80.gif]] |
+
+| ~swagg-request-with-rest-block~                                                                    |
+|--------------------------------------------------------------------------------------------------|
+| [[file:https://github.com/isamert/swagg.el/assets/8031017/ec08f4df-2015-4e40-b502-e59f211edf3f.gif]] |
