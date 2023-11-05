@@ -3,7 +3,7 @@
 ;; Copyright (C) 2023  Isa Mert Gurbuz
 
 ;; Author: Isa Mert Gurbuz <isamertgurbuz@gmail.com>
-;; Version: 0.0.1
+;; Version: 0.1.1
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
 ;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (yaml "0.5.1") (s "1.13.1"))
@@ -716,11 +716,18 @@ the definition as it's defined in `swagg-definitions'."
                 result)))))
     `(,@selected :swagger ,swagger)))
 
-(defun swagg-invalidate-cache ()
+(defun swagg-invalidate-cache (select?)
   "Invalidate swagger definition JSON cache.
-Useful if your swagger JSON/YAML has been changed."
-  (interactive)
-  (setq swagg--json-cache '()))
+Useful if your swagger JSON/YAML has been changed.
+
+If SELECT? is non-nil, instead of invalidating all definitions,
+prompt user to select a definition to invalidate."
+  (interactive "P")
+  (if select?
+      (and-let* ((selected (swagg--select-definition)))
+        (setq swagg--json-cache (map-delete swagg--json-cache (plist-get selected :name))))
+    (setq swagg--json-cache '()))
+  (message "Invalidated!"))
 
 
 
