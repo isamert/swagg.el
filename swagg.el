@@ -135,6 +135,11 @@ To wrap it into org babel block.  Also see `swagg-rest-block-prelude'."
   :type 'string
   :group 'swagg)
 
+(defcustom swagg-fetch-lang "javascript"
+  "Babel code block language for inserted fetch calls."
+  :type 'string
+  :group 'swagg)
+
 ;; TODO: savehist integration?
 (defcustom swagg-remember-inputs t
   "Whether to remember inputs for paremeters you entered before.
@@ -289,6 +294,14 @@ PROMPT is passed to `read-string' as-is."
     (setf (alist-get cache-path swagg--read-string-cache nil nil #'equal)
           (if (s-blank? result) nil result))
     result))
+
+(defun swagg--indent (length str)
+  "Indent STR with LENGTH amount of spaces."
+  (with-temp-buffer
+    (insert str)
+    (goto-char (point-min))
+    (indent-rigidly (point) (point-max) length)
+    (buffer-substring (point-min) (point-max))))
 
 
 ;;; Core
@@ -632,7 +645,6 @@ Also see `swagg-use-unique-buffer-per-request'."
     (let ((req (swagg--req-builder def)))
       (s-trim
        (concat
-        swagg-rest-block-prelude
         (swagg--req-type req)
         " "
         (swagg--req-gen-url req)
@@ -645,8 +657,53 @@ Also see `swagg-use-unique-buffer-per-request'."
         (when-let* ((body (swagg--gen-body
                            (plist-get def :swagger)
                            (plist-get req :info))))
-          (concat "\n\n" body))
-        swagg-rest-block-postlude)))))
+          (concat "\n\n" body)))))))
+
+(defun swagg--generate-js-fetch-call (def)
+  "Generate JavaScript fetch call for DEF."
+  (swagg--with-def def
+    (let ((req (swagg--req-builder def)))
+      (swagg--indent
+       2
+       (format
+        "await fetch('%s', {\n  method: '%s',\n%s%s})"
+        (swagg--req-gen-url req)
+        (swagg--req-type req)
+        ;; headers
+        (if-let* ((headers (plist-get req :headers))
+                  (joined (s-join ",\n    "
+                                  (mapcar
+                                   (-lambda ((key . val))
+                                     (format "'%s': '%s'" key val))
+                                   headers))))
+            (format "  headers: {\n    %s,\n  }" joined)
+          "")
+        ;; body
+        (if-let* ((body (swagg--gen-body
+                         (plist-get def :swagger)
+                         (plist-get req :info)))
+                  ((not (s-blank? body))))
+            (format
+             "  body: JSON.stringify(%s),\n"
+             (s-chop-left 2 (swagg--indent 2 body)))
+          ""))))))
+
+(defun swagg--write-block-to-swagg-buffer (block arg)
+  (if arg
+      (insert block)
+    (with-current-buffer (get-buffer-create swagg--rest-buffer)
+      (org-mode)
+      (goto-char (point-max))
+      (org-insert-heading nil t)
+      (insert (format-time-string "%F %a %R"))
+      (when swagg-rest-block-org-header-tags
+        (org-set-tags swagg-rest-block-org-header-tags))
+      (end-of-line)
+      (setq block (concat swagg-rest-block-prelude block swagg-rest-block-postlude))
+      (insert "\n\n" block "\n")))
+  (unless arg
+    (switch-to-buffer-other-window swagg--rest-buffer)
+    (goto-char (point-max))))
 
 (defun swagg-request-with-rest-block (definition &optional arg)
   "Select an endpoint from Swagger DEFINITION and make a request.
@@ -669,21 +726,15 @@ Also see `swagg-rest-block-prelude' and
 surroundings and `swagg-rest-block-org-header-tags' to
 automatically tag request's org-header."
   (interactive (list (swagg--select-definition) current-prefix-arg))
-  (let ((block (swagg--generate-rest-block definition)))
-    (if arg
-        (insert block)
-      (with-current-buffer (get-buffer-create swagg--rest-buffer)
-        (org-mode)
-        (goto-char (point-max))
-        (org-insert-heading nil t)
-        (insert (format-time-string "%F %a %R"))
-        (when swagg-rest-block-org-header-tags
-          (org-set-tags swagg-rest-block-org-header-tags))
-        (end-of-line)
-        (insert "\n\n" block "\n"))))
-  (unless arg
-    (switch-to-buffer-other-window swagg--rest-buffer)
-    (goto-char (point-max))))
+  (swagg--write-block-to-swagg-buffer (swagg--generate-rest-block definition) arg))
+
+(defun swagg-request-with-fetch (definition &optional arg)
+  "Like `swagg-request-with-rest-block' uses JavaScript fetch call syntax.
+Also see `swagg-fetch-lang' variable."
+  (interactive (list (swagg--select-definition) current-prefix-arg))
+  (let ((swagg-rest-block-prelude (format "#+begin_src %s\n" swagg-fetch-lang))
+        (swagg-rest-block-postlude "\n#+end_src\n"))
+    (swagg--write-block-to-swagg-buffer (swagg--generate-js-fetch-call definition) arg)))
 
 
 ;;; Interactive helpers
