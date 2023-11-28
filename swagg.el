@@ -3,7 +3,7 @@
 ;; Copyright (C) 2023  Isa Mert Gurbuz
 
 ;; Author: Isa Mert Gurbuz <isamertgurbuz@gmail.com>
-;; Version: 0.2.1
+;; Version: 0.2.2
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
 ;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (yaml "0.5.1") (s "1.13.1"))
@@ -316,16 +316,17 @@ PROMPT is passed to `read-string' as-is."
     (alist-get 'paths swagger))
    :formatter
    (-lambda ((path . (op . info)))
-     (format "%-7s → %-50s %s"
-             (propertize
-              (upcase (symbol-name op)) 'face `(:foreground ,(pcase op
-                                                               ('get "sky blue")
-                                                               ('post "green")
-                                                               ('delete "red")
-                                                               ('patch "yellow")
-                                                               (_ "white"))))
-             path
-             (propertize (or (alist-get 'summary info) "") 'face 'italic)))
+     (s-trim
+      (format "%-7s → %-50s %s"
+              (propertize
+               (upcase (symbol-name op)) 'face `(:foreground ,(pcase op
+                                                                ('get "sky blue")
+                                                                ('post "green")
+                                                                ('delete "red")
+                                                                ('patch "yellow")
+                                                                (_ "white"))))
+              path
+              (propertize (or (alist-get 'summary info) "") 'face 'italic))))
    :group
    ;; TODO use swagger tag for grouping instead of path based grouping
    (lambda (cand transform)
