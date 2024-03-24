@@ -3,7 +3,7 @@
 ;; Copyright (C) 2023  Isa Mert Gurbuz
 
 ;; Author: Isa Mert Gurbuz <isamertgurbuz@gmail.com>
-;; Version: 0.2.2
+;; Version: 0.3.2
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
 ;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (yaml "0.5.1") (s "1.13.1"))
@@ -67,7 +67,10 @@ Each list may have one or more of the following keys:
 
 - :base (required): Base URL of the API.
 
-- :json OR :yaml (required): URL of the Swagger JSON or YAML file.
+- :json OR :yaml (required): URL of the Swagger JSON or YAML
+  file.  These can also be a function, rather than a string, that
+  returns the URL.  The function takes one argument, which is the
+  whole definition as a plist.
 
 - :header (optional): An alist containing default header values.
   If a request made to the API contains a header parameter named
@@ -142,7 +145,7 @@ To wrap it into org babel block.  Also see `swagg-rest-block-prelude'."
 
 ;; TODO: savehist integration?
 (defcustom swagg-remember-inputs t
-  "Whether to remember inputs for paremeters you entered before.
+  "Whether to remember inputs for parameters you entered before.
 When this is non-nil, any parameter you entered will be
 remembered and will be presented as default value next time you
 need to enter it.  This cache is kept only for the current
@@ -753,6 +756,8 @@ the definition as it's defined in `swagg-definitions'."
          (name (plist-get selected :name))
          (swagger
           (with-memoization (alist-get name swagg--json-cache nil nil #'equal)
+            (when (functionp definition)
+              (setq definition (funcall definition selected)))
             (if (file-exists-p definition)
                 (with-temp-buffer
                   (insert-file-contents definition)
