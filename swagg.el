@@ -542,8 +542,10 @@ tries to display the RESPONSE according to it's content-type."
              (downcase))
       ("application/json"
        (json-pretty-print-buffer)
-       (require 'json-mode)
-       (json-mode))
+       (if (featurep 'json-ts-mode)
+           (json-ts-mode)
+         (require 'json-mode)
+         (json-mode)))
       (_ (prog-mode)))
     (setq
      header-line-format
