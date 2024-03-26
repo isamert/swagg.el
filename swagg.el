@@ -620,6 +620,7 @@ tries to display the RESPONSE according to it's content-type."
 ;;; Interactive - User level
 
 ;; FIXME: This does not handle request body
+;;;###autoload
 (defun swagg-request (definition)
   "Select an endpoint from Swagger DEFINITION and make a request.
 When called interactively, you'll be prompted to select a
@@ -711,6 +712,7 @@ Also see `swagg-use-unique-buffer-per-request'."
     (switch-to-buffer-other-window swagg--rest-buffer)
     (goto-char (point-max))))
 
+;;;###autoload
 (defun swagg-request-with-rest-block (definition &optional arg)
   "Select an endpoint from Swagger DEFINITION and make a request.
 When called interactively, you'll be prompted to select a
@@ -775,7 +777,8 @@ the definition as it's defined in `swagg-definitions'."
                 result)))))
     `(,@selected :swagger ,swagger)))
 
-(defun swagg-invalidate-cache (select?)
+;;;###autoload
+(defun swagg-invalidate-cache (&optional select?)
   "Invalidate swagger definition JSON cache.
 Useful if your swagger JSON/YAML has been changed.
 
