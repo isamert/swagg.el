@@ -191,6 +191,9 @@ present in the header to be able to act on them."
 (defvar-local swagg--request nil
   "Current request associated with the results buffer.")
 
+(defvar swagg--http-verbs '("GET" "POST" "PUT" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "TRACE")
+  "List of all HTTP verbs.")
+
 ;; TODO: Persist cache between sessions?
 (defvar swagg--json-cache '()
   "Cache for downloaded and parsed swagger definitions.
@@ -315,7 +318,14 @@ PROMPT is passed to `read-string' as-is."
    "Select operation: "
    (--mapcat
     (-let (((path . ops) it))
-      (--map (cons path it) (swagg--resolve-if-ref swagger ops)))
+      (--map
+       (cons path it)
+       (swagg--resolve-if-ref
+        swagger
+        ;; Filter out non-http verb fields (like description, see #5)
+        (--filter
+         (-contains? swagg--http-verbs (upcase (format "%s" (car it))))
+         ops))))
     (alist-get 'paths swagger))
    :formatter
    (-lambda ((path . (op . info)))
