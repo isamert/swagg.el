@@ -352,7 +352,7 @@ PROMPT is passed to `read-string' as-is."
         (-some->> cand
           (swagg--split-once "→")
           (nth 1)
-          ((lambda (it) (string-trim-left it "[ /]+")))
+          (funcall (lambda (it) (string-trim-left it "[ /]+")))
           (swagg--split-once "/")
           (car)
           (swagg--split-once " ")
