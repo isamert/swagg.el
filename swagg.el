@@ -575,13 +575,13 @@ tries to display the RESPONSE according to it's content-type."
 
 ;;;; swagg--req
 
-(defun swagg--req-builder (def)
-  "For DEF, create a plist containing all relevant request info."
-  (-let* ((swagger (plist-get def :swagger))
+(defun swagg--req-builder ()
+  "For `swagg--def', create a plist containing all relevant request info."
+  (-let* ((swagger (plist-get swagg--def :swagger))
           ((endpoint . (verb . info))
            (swagg--select-op swagger)))
     (append
-     def
+     swagg--def
      (list
       :info info
       :endpoint endpoint
@@ -640,7 +640,7 @@ see `swagg-request-with-rest-block'.
 Also see `swagg-use-unique-buffer-per-request'."
   (interactive (list (swagg--select-definition)))
   (swagg--with-def definition
-    (let ((req (swagg--req-builder definition)))
+    (let ((req (swagg--req-builder)))
       (request
         (swagg--req-gen-url req)
         :type (swagg--req-type req)
@@ -653,7 +653,7 @@ Also see `swagg-use-unique-buffer-per-request'."
 (defun swagg--generate-rest-block (def)
   "Generate rest block for DEF."
   (swagg--with-def def
-    (let ((req (swagg--req-builder def)))
+    (let ((req (swagg--req-builder)))
       (s-trim
        (concat
         (swagg--req-type req)
@@ -673,7 +673,7 @@ Also see `swagg-use-unique-buffer-per-request'."
 (defun swagg--generate-js-fetch-call (def)
   "Generate JavaScript fetch call for DEF."
   (swagg--with-def def
-    (let ((req (swagg--req-builder def)))
+    (let ((req (swagg--req-builder)))
       (swagg--indent
        2
        (format
