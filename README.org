@@ -42,26 +42,34 @@ Note that /swagg.el/ caches the definitions on the first fetch. If your definiti
 
 Please do ~M-x customize-group swagg RET~ to see all customization options. Most of them are pretty self-explanatory. Here, I will go over some more obscure customizations:
 
-** Binding variables
+** Binding variables & including variables to requests
 
-Each time you call one of the interactive functions and select and endpoint to work on, you'll be prompted for each variable that endpoint requires. Entering some of these variables, like authentication headers, can become repetitive. For this, you can pre-bind these variables while setting the definitions:
+Each time you call one of the interactive functions and select and endpoint to work on, you'll be prompted for each variable that endpoint requires. Entering some of these variables, like authentication headers, can become repetitive. For this, you can pre-bind these variables while setting the definitions using ~:header~, ~:query~ and ~:any~ options. You can also include headers and query parameters to every request by utilizing ~:header-all~ and ~:query-all~ options:
 
 #+begin_src elisp
-  (setq
-   swagg-definitions
-   '((:name "..."
-      :json "..."
-      :base "..."
-      ;; To bind query parameters:
-      :query '((param1 . "somevalue")
-               (param2 . "somevalue2"))
-      ;; To bind headers:
-      :header '((token . "12345")
-                (another-header . "value"))
-      ;; To bind anything with given name:
-      :any ((param . "22")
-            (token . "000")))
-     ...))
+(setq
+ swagg-definitions
+ '((:name "GitHub API"
+    :json "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"
+    :base "https://api.github.com"
+
+    ;; Default query parameters
+    :query ((per_page . "100")
+            (sort . "created"))
+
+    ;; Query parameters to be included in every request
+    :query-all ((access_token . "your-access-token"))
+
+    ;; Default headers
+    :header ((User-Agent . "my-app-client"))
+
+    ;; Headers to be included in every request
+    :header-all ((Content-Type . "application/json")
+                 (Authorization . "Bearer your-auth-token"))
+
+    ;; Default values for any type of parameter
+    :any ((locale . "en-US")
+          (cache_control . "no-cache")))))
 #+end_src
 
 When you bind parameters like this, they will appear as the default string while constructing the request. If you want them to be never asked and automatically accepted as given parameters, set ~swagg-auto-accept-bound-values~ to a non nil value.

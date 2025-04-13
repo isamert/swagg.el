@@ -41,6 +41,7 @@
 (require 'org)
 (require 's)
 (require 'pp)
+(require 'map)
 
 ;; Notes
 ;; Example Swagger JSON definitions
@@ -70,17 +71,25 @@ Each list may have one or more of the following keys:
   returns the URL.  The function takes one argument, which is the
   whole definition as a plist.
 
-- :header (optional): An alist containing default header values.
-  If a request made to the API contains a header parameter named
-  X, swagg first checks if the :header alist contains a value for
-  X. If found, the value is used as the default value.  If not
-  found, the user is prompted to enter the value for X. X being a
-  hypothetical example here, works for any header keys.  The
-  value can be a function, in that case that function will be
-  executed with no parameters and the result will be used as the
-  value.
+- :header (optional): An alist containing default header values.  If a
+  request made to the API *contains* a header parameter named X, swagg
+  first checks if the :header alist contains a value for X. If found,
+  the value is used as the default value.  If not found, the user is
+  prompted to enter the value for X. X being a hypothetical example
+  here, works for any header keys.  The value can be a function, in that
+  case that function will be executed with no parameters and the result
+  will be used as the value.
+
+- :header-all (optional): Header values to be included in every
+  request. Unlike :header, which only includes the value if the Swagger
+  definition specifies it, :header-all ensures the headers are included
+  in every request. For instance, most Swagger definitions do not
+  include the \"Authorization\" header due to security concerns; if you
+  wish to add this header to each request, use :header-all.
 
 - :query (optional): Like :header, but for query parameters.
+
+- :query-all (optional): Like :header-all, but for query parameters.
 
 - :path (optional): Like :header, but for path parameters.
 
@@ -586,9 +595,15 @@ tries to display the RESPONSE according to it's content-type."
       :info info
       :endpoint endpoint
       :verb verb
-      :query-params (swagg--gen-query-params swagger info)
+      :query-params (map-merge
+                     'alist
+                     (plist-get swagg--def :query-all)
+                     (swagg--gen-headers info))
       :path-params (swagg--gen-path-params swagger info)
-      :headers (swagg--gen-headers info)))))
+      :headers (map-merge
+                'alist
+                (plist-get swagg--def :header-all)
+                (swagg--gen-headers info))))))
 
 (defun swagg--req-type (req)
   "Return the request type (GET, POST, PUT etc.) for REQ as string."
