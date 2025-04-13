@@ -738,6 +738,7 @@ automatically tag request's org-header."
   (interactive (list (swagg--select-definition) current-prefix-arg))
   (swagg--write-block-to-swagg-buffer (swagg--generate-rest-block definition) arg))
 
+;;;###autoload
 (defun swagg-request-with-fetch (definition &optional arg)
   "Like `swagg-request-with-rest-block' uses JavaScript fetch call syntax.
 Also see `swagg-fetch-lang' variable."
