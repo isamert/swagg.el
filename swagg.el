@@ -137,7 +137,9 @@ To wrap it into org babel block.  Also see `swagg-rest-block-prelude'."
   :group 'swagg)
 
 (defcustom swagg-fetch-lang "javascript"
-  "Babel code block language for inserted fetch calls."
+  "Babel code block language for inserted fetch calls.
+For example, this can be changed into \"deno :allow net\" if you are
+using the `ob-deno' package."
   :type 'string
   :group 'swagg)
 
