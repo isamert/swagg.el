@@ -42,14 +42,12 @@
 (require 's)
 (require 'pp)
 
-
 ;; Notes
 ;; Example Swagger JSON definitions
 ;; https://petstore.swagger.io/v2/swagger.json
 ;; https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json
 
-
-;;; Customization
+;;;; Customization
 
 (defgroup swagg nil
   "A practical swagger client for Emacs."
@@ -173,8 +171,7 @@ present in the header to be able to act on them."
   :type 'string
   :group 'swagg)
 
-
-;;; Internal
+;;;; Internal
 
 (defconst swagg--rest-buffer "*swagg-request*"
   "Name of the buffer where REST blocks are appended.")
@@ -204,8 +201,7 @@ Set this to nil if you want invalidate the cache.")
   "Cache for header/parameter inputs.
 See `swagg-remember-inputs'.")
 
-
-;;; Helpers
+;;;; Helpers
 
 (defvar swagg--dbg t)
 (defun swagg--dbg (msg &rest rest)
@@ -309,8 +305,7 @@ PROMPT is passed to `read-string' as-is."
     (indent-rigidly (point) (point-max) length)
     (buffer-substring (point-min) (point-max))))
 
-
-;;; Core
+;;;; Core
 
 (defun swagg--select-op (swagger)
   "Prompt the user to select an operation from the given SWAGGER spec."
@@ -515,8 +510,7 @@ operation object.  Parameters are requested from user."
                    :type :header
                    :name .name))))))
 
-
-;;; swagg-response-mode
+;;;; swagg-response-mode
 
 ;; TODO: re-send request
 ;; TODO: copy request as curl
@@ -577,8 +571,7 @@ tries to display the RESPONSE according to it's content-type."
    (request-response-headers swagg--response)
    swagg--headers-buffer-name))
 
-
-;;; swagg--req
+;;;; swagg--req
 
 (defun swagg--req-builder (def)
   "For DEF, create a plist containing all relevant request info."
@@ -626,8 +619,7 @@ tries to display the RESPONSE according to it's content-type."
     ;; Filter out empty parameters. Not the greatest place to do it but anyway.
     (--filter (not (s-ends-with? "=" it)) (plist-get req :query-params)))))
 
-
-;;; Interactive - User level
+;;;; Interactive - User level
 
 ;; FIXME: This does not handle request body
 ;;;###autoload
@@ -754,8 +746,7 @@ Also see `swagg-fetch-lang' variable."
         (swagg-rest-block-postlude "\n#+end_src\n"))
     (swagg--write-block-to-swagg-buffer (swagg--generate-js-fetch-call definition) arg)))
 
-
-;;; Interactive helpers
+;;;; Interactive helpers
 
 (defun swagg--select-definition ()
   "Select a definition interactively.
@@ -801,7 +792,7 @@ prompt user to select a definition to invalidate."
     (setq swagg--json-cache '()))
   (message "Invalidated!"))
 
-
+;;;; Footer
 
 (provide 'swagg)
 ;;; swagg.el ends here
