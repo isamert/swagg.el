@@ -214,11 +214,23 @@ See `swagg-remember-inputs'.")
 
 ;;;; Helpers
 
-(defvar swagg--dbg t)
+(defvar swagg--dbg nil)
+
 (defun swagg--dbg (msg &rest rest)
-  "Print MSG with REST if variable `swagg--dbg' is non-nil."
+  "Append MSG with REST to the *swagg-log* buffer if variable `swagg--dbg' is non-nil."
   (when swagg--dbg
-    (apply #'message `(,(format "(swagg) %s" msg) ,@rest))))
+    (with-current-buffer (get-buffer-create "*swagg-log*")
+      (goto-char (point-max))
+      (insert (apply #'format "[MSG] %s" msg rest) "\n"))))
+
+(defun swagg--tap (&rest rest)
+  "Like `swagg-dbg' but the last of REST is returned as-is and logged to log buffer."
+  (when swagg--dbg
+    (with-current-buffer (get-buffer-create "*swagg-log*")
+      (goto-char (point-max))
+      (insert (apply #'format "  [TAP] %s" (-first-item (-butlast rest)) (-butlast rest))
+              (format " → %s" (-last-item rest)) "\n")))
+  (-last-item rest))
 
 (defun swagg--alist-path-get (path alist)
   "Get the value associated with a specific PATH in ALIST.
