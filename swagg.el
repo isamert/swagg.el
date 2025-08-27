@@ -152,6 +152,24 @@ using the `ob-deno' package."
   :type 'string
   :group 'swagg)
 
+(defcustom swagg-org-src-lang "verb"
+  "Babel code block language for inserted verb style calls.
+
+Used in `swagg-request-with-rest-src-block'.
+
+By default, it's \"verb\"[^1] but you can change it to
+\"restclient\"[^2] or ob-http[^3] if you are using one of those
+packages.  You can also pass src block parameters too: \"http :pretty t
+:select x.y.z\"
+
+[1]: https://github.com/federicotdn/verb
+[2]: https://github.com/pashky/restclient.el &
+     https://github.com/alf/ob-restclient.el
+[3]: https://github.com/zweifisch/ob-http
+     https://github.com/ag91/ob-http"
+  :type 'string
+  :group 'swagg)
+
 ;; TODO: savehist integration?
 (defcustom swagg-remember-inputs t
   "Whether to remember inputs for parameters you entered before.
@@ -767,9 +785,29 @@ automatically tag request's org-header."
   (interactive (list (swagg--select-definition) current-prefix-arg))
   (swagg--write-block-to-swagg-buffer (swagg--generate-rest-block definition) arg))
 
+(defun swagg-request-with-rest-src-block (definition &optional arg)
+  "Select an endpoint from Swagger DEFINITION and create an org src block.
+When called interactively, you'll be prompted to select a definition
+from `swagg-definitions' first.
+
+After selecting a definition and an endpoint, you'll be prompted to
+enter all path parameters.  After that, a new (or already existing)
+`org-mode' buffer will open and your request will be inserted (with
+generated request body, if there is one) into this buffer.  Now you can
+utilize any rest client to send your request, like one of the following:
+verb, restclient.el, ob-http.  See `swagg-org-src-lang' to control
+this.
+
+If ARG is non-nil, then instead of inserting the request to a new
+buffer, simply insert it to current buffer."
+  (interactive (list (swagg--select-definition) current-prefix-arg))
+  (let ((swagg-rest-block-prelude (format "#+begin_src %s\n" swagg-org-src-lang))
+        (swagg-rest-block-postlude "\n#+end_src\n"))
+    (swagg--write-block-to-swagg-buffer (swagg--generate-rest-block definition) arg)))
+
 ;;;###autoload
 (defun swagg-request-with-fetch (definition &optional arg)
-  "Like `swagg-request-with-rest-block' uses JavaScript fetch call syntax.
+  "Like `swagg-request-with-rest-src-block' uses JavaScript fetch call syntax.
 Also see `swagg-fetch-lang' variable."
   (interactive (list (swagg--select-definition) current-prefix-arg))
   (let ((swagg-rest-block-prelude (format "#+begin_src %s\n" swagg-fetch-lang))
