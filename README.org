@@ -96,3 +96,7 @@ As a side note, swagg automatically remembers the values you entered for the ses
 | ~swagg-request-with-rest-block~                                                                    |
 |--------------------------------------------------------------------------------------------------|
 | [[file:https://github.com/isamert/swagg.el/assets/8031017/ec08f4df-2015-4e40-b502-e59f211edf3f.gif]] |
+
+* Related work
+
+- [[https://codeberg.org/martianh/jag.el][jag.el]] :: Uses swagg.el to generate REST API libraries in Elisp from Swagger/OpenAPI definitions.
