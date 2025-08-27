@@ -24,10 +24,20 @@ Set the variable ~swagg-definitions~. Here I added Swagger definitions for GitHu
    swagg-definitions
    '((:name "GitHub"
       :json "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"
-      :base "https://api.github.com")
+      :base "https://api.github.com"
+      :header-all ((token . "12345")
+                   (Cache-Control . "no-cache")
+                   (Content-Type . "application/json")
+                   (Accept . "application/json")
+                   (another-header . "value")))
      (:name "GitLab"
       :yaml "https://gitlab.com/gitlab-org/gitlab/-/raw/master/doc/api/openapi/openapi.yaml"
-      :base "https://gitlab.com/api")))
+      :base "https://gitlab.com/api"
+      :header ((token . "12345")
+               (Cache-Control . "no-cache")
+               (Content-Type . "application/json")
+               (Accept . "application/json")
+               (another-header . "value")))))
 #+end_src
 
 That's it. Now you can use the following functions:
