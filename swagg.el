@@ -745,6 +745,7 @@ Also see `swagg-use-unique-buffer-per-request'."
           ""))))))
 
 (defun swagg--write-block-to-swagg-buffer (block arg)
+  (setq block (concat swagg-rest-block-prelude block swagg-rest-block-postlude))
   (if arg
       (insert block)
     (with-current-buffer (get-buffer-create swagg--rest-buffer)
@@ -755,7 +756,6 @@ Also see `swagg-use-unique-buffer-per-request'."
       (when swagg-rest-block-org-header-tags
         (org-set-tags swagg-rest-block-org-header-tags))
       (end-of-line)
-      (setq block (concat swagg-rest-block-prelude block swagg-rest-block-postlude))
       (insert "\n\n" block "\n")))
   (unless arg
     (switch-to-buffer-other-window swagg--rest-buffer)
