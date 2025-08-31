@@ -1,7 +1,7 @@
 #+TITLE: swagg.el
 
-[[https://stable.melpa.org/#/lab][file:https://stable.melpa.org/packages/swagg-badge.svg]]
-[[https://melpa.org/#/empv][file:https://melpa.org/packages/swagg-badge.svg]]
+[[https://stable.melpa.org/#/swagg][file:https://stable.melpa.org/packages/swagg-badge.svg]]
+[[https://melpa.org/#/swagg][file:https://melpa.org/packages/swagg-badge.svg]]
 
 /swagg.el/ is an Emacs package that lets you fetch and interact with OpenAPI (formerly Swagger) definitions. You can think of it like a Swagger UI that your app has but works for multiple definitions and it's right inside your Emacs frame!
 
