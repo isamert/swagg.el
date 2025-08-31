@@ -1,6 +1,22 @@
 #+TITLE: swagg.el
 
+[[https://stable.melpa.org/#/lab][file:https://stable.melpa.org/packages/swagg-badge.svg]]
+[[https://melpa.org/#/empv][file:https://melpa.org/packages/swagg-badge.svg]]
+
 /swagg.el/ is an Emacs package that lets you fetch and interact with OpenAPI (formerly Swagger) definitions. You can think of it like a Swagger UI that your app has but works for multiple definitions and it's right inside your Emacs frame!
+
+* Contents :noexport:
+:PROPERTIES:
+:TOC:      :include siblings :depth 3 :ignore this
+:END:
+:CONTENTS:
+- [[#installation][Installation]]
+- [[#basic-usage][Basic usage]]
+- [[#customization][Customization]]
+  - [[#binding-variables--including-variables-to-requests][Binding variables & including variables to requests]]
+- [[#demo][Demo]]
+- [[#related-work][Related work]]
+:END:
 
 * Installation
 swagg is available through [[https://melpa.org/#/swagg][MELPA]]. If you have it set up already, just do ~M-x package-install swagg~ and you are good to go. Otherwise please see [[https://melpa.org/#/getting-started][MELPA getting started]] page to learn how you can install packages through MELPA or see the following installation options.
@@ -100,3 +116,7 @@ As a side note, swagg automatically remembers the values you entered for the ses
 * Related work
 
 - [[https://codeberg.org/martianh/jag.el][jag.el]] :: Uses swagg.el to generate REST API libraries in Elisp from Swagger/OpenAPI definitions.
+
+# Local Variables:
+# before-save-hook: org-make-toc
+# End:
