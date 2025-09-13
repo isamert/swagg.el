@@ -42,6 +42,7 @@
 (require 's)
 (require 'pp)
 (require 'map)
+(require 'url-util)
 
 ;; Notes
 ;; Example Swagger JSON definitions
@@ -80,8 +81,8 @@ Each list may have one or more of the following keys:
   case that function will be executed with no parameters and the result
   will be used as the value.
 
-- :header-all (optional): Header values to be included in every
-  request. Unlike :header, which only includes the value if the Swagger
+- :header-all (optional): Header values to be included in every request.
+  Unlike :header, which only includes the value if the Swagger
   definition specifies it, :header-all ensures the headers are included
   in every request. For instance, most Swagger definitions do not
   include the \"Authorization\" header due to security concerns; if you
@@ -475,7 +476,7 @@ called '$ref'"
   "Return a formatted parameter value based on given DEF and VALUE."
   (let-alist def
     (if (equal .in "query")
-        (format "%s=%s" .name value)
+        (format "%s=%s" .name (url-hexify-string value))
       value)))
 
 (defun swagg--read-param-from-user (param-type def)
@@ -618,7 +619,14 @@ tries to display the RESPONSE according to it's content-type."
   "For `swagg--def', create a plist containing all relevant request info."
   (-let* ((swagger (plist-get swagg--def :swagger))
           ((endpoint . (verb . info))
-           (swagg--select-op swagger)))
+           (swagg--select-op swagger))
+          (body (when-let* ((it (swagg--gen-body swagger info))
+                            (_ (not (s-blank? it))))
+                  it))
+          (headers (map-merge
+                    'alist
+                    (plist-get swagg--def :header-all)
+                    (swagg--gen-headers info))))
     (append
      swagg--def
      (list
@@ -630,10 +638,8 @@ tries to display the RESPONSE according to it's content-type."
                      (plist-get swagg--def :query-all)
                      (swagg--gen-headers info))
       :path-params (swagg--gen-path-params swagger info)
-      :headers (map-merge
-                'alist
-                (plist-get swagg--def :header-all)
-                (swagg--gen-headers info))))))
+      :headers headers
+      :body body))))
 
 (defun swagg--req-type (req)
   "Return the request type (GET, POST, PUT etc.) for REQ as string."
@@ -710,9 +716,7 @@ Also see `swagg-use-unique-buffer-per-request'."
                           (mapcar (-lambda ((key . val))
                                     (format "%s: %s" key val))
                                   headers))))
-        (when-let* ((body (swagg--gen-body
-                           (plist-get def :swagger)
-                           (plist-get req :info))))
+        (when-let* ((body (plist-get req :body)))
           (concat "\n\n" body)))))))
 
 (defun swagg--generate-js-fetch-call (def)
@@ -735,10 +739,7 @@ Also see `swagg-use-unique-buffer-per-request'."
             (format "  headers: {\n    %s,\n  }" joined)
           "")
         ;; body
-        (if-let* ((body (swagg--gen-body
-                         (plist-get def :swagger)
-                         (plist-get req :info)))
-                  ((not (s-blank? body))))
+        (if-let* ((body (plist-get req :body)))
             (format
              "  body: JSON.stringify(%s),\n"
              (s-chop-left 2 (swagg--indent 2 body)))
