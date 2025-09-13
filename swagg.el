@@ -623,10 +623,22 @@ tries to display the RESPONSE according to it's content-type."
           (body (when-let* ((it (swagg--gen-body swagger info))
                             (_ (not (s-blank? it))))
                   it))
+          (has-json-body (and
+                          body
+                          (let-alist info
+                            (or .requestBody.content.application/json
+                                (--find (s-matches? (or (alist-get 'in it) "") "body")
+                                        (alist-get 'parameters info))))))
           (headers (map-merge
                     'alist
                     (plist-get swagg--def :header-all)
-                    (swagg--gen-headers info))))
+                    (swagg--gen-headers info)))
+          (final-headers (if (and has-json-body
+                                  (not (--find (let ((case-fold-search t))
+                                                 (string-match-p "^content-type$" (car it)))
+                                               headers)))
+                             (cons '("Content-Type" . "application/json") headers)
+                           headers)))
     (append
      swagg--def
      (list
@@ -641,7 +653,7 @@ tries to display the RESPONSE according to it's content-type."
                        (--map (format "%s=%s" (car it) (url-hexify-string (cdr it))) non-default-used-params)
                        user-params))
       :path-params (swagg--gen-path-params swagger info)
-      :headers headers
+      :headers final-headers
       :body body))))
 
 (defun swagg--req-type (req)
