@@ -633,10 +633,13 @@ tries to display the RESPONSE according to it's content-type."
       :info info
       :endpoint endpoint
       :verb verb
-      :query-params (map-merge
-                     'alist
-                     (plist-get swagg--def :query-all)
-                     (swagg--gen-headers info))
+      :query-params (let* ((default-params (plist-get swagg--def :query-all))
+                           (user-params (--filter (not (s-ends-with? "=" it)) (swagg--gen-query-params swagger info)))
+                           (param-names (--map (car (s-split "=" it)) user-params))
+                           (non-default-used-params (--filter (not (-contains? param-names (car it))) default-params)))
+                      (append
+                       (--map (format "%s=%s" (car it) (url-hexify-string (cdr it))) non-default-used-params)
+                       user-params))
       :path-params (swagg--gen-path-params swagger info)
       :headers headers
       :body body))))
@@ -667,10 +670,7 @@ tries to display the RESPONSE according to it's content-type."
    (plist-get req :base)
    (swagg--req-make-endpoint req)
    (if (plist-get req :query-params) "?" "")
-   (s-join
-    "&"
-    ;; Filter out empty parameters. Not the greatest place to do it but anyway.
-    (--filter (not (s-ends-with? "=" it)) (plist-get req :query-params)))))
+   (s-join "&" (plist-get req :query-params))))
 
 ;;;; Interactive - User level
 
