@@ -19,16 +19,17 @@
 :END:
 
 * Installation
+
 swagg is available through [[https://melpa.org/#/swagg][MELPA]]. If you have it set up already, just do ~M-x package-install swagg~ and you are good to go. Otherwise please see [[https://melpa.org/#/getting-started][MELPA getting started]] page to learn how you can install packages through MELPA or see the following installation options.
 
 Another way to install =swagg.el= would be using either [[https://github.com/radian-software/straight.el][straight]] or [[https://github.com/quelpa/quelpa-use-package][quelpa]] package managers:
 
 #+begin_src elisp
-  ;; Using straight:
-  (use-package swagg :straight (:host github :repo "isamert/swagg.el"))
+;; Using straight:
+(use-package swagg :straight (:host github :repo "isamert/swagg.el"))
 
-  ;; Using quelpa:
-  (use-package swagg :quelpa (swagg :fetcher github :repo "isamert/swagg.el"))
+;; Using quelpa:
+(use-package swagg :quelpa (swagg :fetcher github :repo "isamert/swagg.el"))
 #+end_src
 
 * Basic usage
@@ -36,24 +37,24 @@ Another way to install =swagg.el= would be using either [[https://github.com/rad
 Set the variable ~swagg-definitions~. Here I added Swagger definitions for GitHub and GitLab. Notice that /swagg.el/ supports both ~json~ and ~yaml~ definitions. Definition files may be local files too.
 
 #+begin_src elisp
-  (setq
-   swagg-definitions
-   '((:name "GitHub"
-      :json "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"
-      :base "https://api.github.com"
-      :header-all ((token . "12345")
-                   (Cache-Control . "no-cache")
-                   (Content-Type . "application/json")
-                   (Accept . "application/json")
-                   (another-header . "value")))
-     (:name "GitLab"
-      :yaml "https://gitlab.com/gitlab-org/gitlab/-/raw/master/doc/api/openapi/openapi.yaml"
-      :base "https://gitlab.com/api"
-      :header ((token . "12345")
-               (Cache-Control . "no-cache")
-               (Content-Type . "application/json")
-               (Accept . "application/json")
-               (another-header . "value")))))
+(setq
+ swagg-definitions
+ '((:name "GitHub"
+    :json "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"
+    :base "https://api.github.com"
+    :header-all ((token . "12345")
+                 (Cache-Control . "no-cache")
+                 (Content-Type . "application/json")
+                 (Accept . "application/json")
+                 (another-header . "value")))
+   (:name "GitLab"
+    :yaml "https://gitlab.com/gitlab-org/gitlab/-/raw/master/doc/api/openapi/openapi.yaml"
+    :base "https://gitlab.com/api"
+    :header ((token . "12345")
+             (Cache-Control . "no-cache")
+             (Content-Type . "application/json")
+             (Accept . "application/json")
+             (another-header . "value")))))
 #+end_src
 
 That's it. Now you can use the following functions:
