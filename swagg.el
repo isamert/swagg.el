@@ -347,6 +347,36 @@ PROMPT is passed to `read-string' as-is."
     (indent-rigidly (point) (point-max) length)
     (buffer-substring (point-min) (point-max))))
 
+(defun swagg--security-header (scheme-def)
+  "Convert OpenAPI security scheme definition to header components.
+SCHEME-DEF is an alist representing the security scheme.
+Returns a list of (HEADER-NAME FORMAT-STRING PLACEHOLDER)."
+  (let-alist scheme-def
+    (pcase .type
+      ("http"
+       (pcase .scheme
+         ("bearer"
+          '("Authorization" "Bearer %s" "<TOKEN>"))
+         ("basic"
+          '("Authorization" "Basic %s" "<BASE64_CREDENTIALS>"))
+         (_ (list "Authorization"
+                  (format "%s %%s" (capitalize .scheme))
+                  "<CREDENTIALS>"))))
+      ("apiKey"
+       (pcase .in
+         ("header"
+          (list .name "%s" "<API_KEY>"))
+         ("query"
+          (list nil (format "%s=%%s" .name) "<API_KEY>"))
+         ("cookie"
+          (list "Cookie" (format "%s=%%s" .name) "<API_KEY>"))))
+      ("oauth2"
+       '("Authorization" "Bearer %s" "<OAUTH_TOKEN>"))
+      ("openIdConnect"
+       '("Authorization" "Bearer %s" "<ID_TOKEN>"))
+      (_
+       '("UNKNOWN_SECURITY_SCHEME" "%s" "?")))))
+
 ;;;; Core
 
 (defun swagg--select-op (swagger)
@@ -633,12 +663,29 @@ tries to display the RESPONSE according to it's content-type."
                     'alist
                     (plist-get swagg--def :header-all)
                     (swagg--gen-headers info)))
-          (final-headers (if (and has-json-body
-                                  (not (--find (let ((case-fold-search t))
-                                                 (string-match-p "^content-type$" (car it)))
-                                               headers)))
-                             (cons '("Content-Type" . "application/json") headers)
-                           headers)))
+          ;; Multiple security schemas are not supported and I'm quite
+          ;; happy that I used `caaar' in a real code.
+          (security (caaar (alist-get 'security info (alist-get 'security swagger))))
+          (security-headers
+           (-when-let* ((security-def
+                         (and security
+                              (alist-get
+                               security
+                               (let-alist swagger .components.securitySchemes))))
+                        ((key val placeholder) (swagg--security-header security-def)))
+             (list (cons key (format val (or (swagg--read-string
+                                              (format "%s: " key)
+                                              :type :header
+                                              :name key)
+                                             placeholder))))))
+          (content-type-headers
+           (when (and has-json-body
+                      (not (--find (let ((case-fold-search t))
+                                     (string-match-p "^content-type$" (car it)))
+                                   headers)))
+             '(("Content-Type" . "application/json"))))
+          (final-headers
+           (seq-concatenate 'list security-headers content-type-headers headers)))
     (append
      swagg--def
      (list
