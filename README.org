@@ -32,6 +32,16 @@ Another way to install =swagg.el= would be using either [[https://github.com/rad
 (use-package swagg :quelpa (swagg :fetcher github :repo "isamert/swagg.el"))
 #+end_src
 
+YAML definitions use [[https://github.com/isamert/yml.el][yml.el]], which requires Emacs dynamic-module support. After installing swagg, run ~M-x yml-install-module~ to download a prebuilt module or build it locally. Building locally requires Rust 1.88 or newer and Cargo.
+
+Optionally, add this to your configuration to check module availability at startup and offer installation when needed:
+
+#+begin_src elisp
+(use-package yml
+  :config
+  (yml-install-module t))
+#+end_src
+
 * Basic usage
 
 Set the variable ~swagg-definitions~. Here I added Swagger definitions for GitHub and GitLab. Notice that /swagg.el/ supports both ~json~ and ~yaml~ definitions. Definition files may be local files too.

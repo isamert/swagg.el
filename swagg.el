@@ -6,7 +6,7 @@
 ;; Version: 0.4.0
 ;; Homepage: https://github.com/isamert/swagg.el
 ;; License: GPL-3.0-or-later
-;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (yaml "0.5.1") (s "1.13.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0") (request "0.3.3") (dash "2.19.1") (yml "0.1.5") (s "1.13.1"))
 ;; Keywords: tools,convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@
 (require 'request)
 (require 'dash)
 (require 'json)
-(require 'yaml)
+(require 'yml)
 (require 'compat)
 (require 'org)
 (require 's)
@@ -308,9 +308,9 @@ but it works for now."
   "Parse the contents of the buffer according to TYPE.
 TYPE can be either :json or :yaml."
   (if (eq type :yaml)
-      (yaml-parse-string
+      (yml-parse-string
        (buffer-string)
-       :sequence-type 'list
+       :array-type 'list
        :object-type 'alist)
     (json-parse-buffer
      :array-type 'list
