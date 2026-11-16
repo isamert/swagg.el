@@ -22,14 +22,26 @@
 
 swagg is available through [[https://melpa.org/#/swagg][MELPA]]. If you have it set up already, just do ~M-x package-install swagg~ and you are good to go. Otherwise please see [[https://melpa.org/#/getting-started][MELPA getting started]] page to learn how you can install packages through MELPA or see the following installation options.
 
-Another way to install =swagg.el= would be using either [[https://github.com/radian-software/straight.el][straight]] or [[https://github.com/quelpa/quelpa-use-package][quelpa]] package managers:
+Another way to install =swagg.el= would be using one of the package managers: [[https://github.com/progfolio/elpaca][elpaca]], [[https://github.com/radian-software/straight.el][straight]], [[https://github.com/quelpa/quelpa-use-package][quelpa]] or [[https://www.gnu.org/software/emacs/manual/html_node/use-package/Install-package.html][vc]]:
 
 #+begin_src elisp
+;; Using vc:
+(use-package swagg
+  :vc (:url "https://github.com/isamert/swagg.el"))
+
+;; Using elpaca:
+(use-package swagg
+  :ensure (:host github :repo "isamert/swagg.el"))
+
 ;; Using straight:
-(use-package swagg :straight (:host github :repo "isamert/swagg.el"))
+(use-package swagg
+  :straight (:host github :repo "isamert/swagg.el"))
 
 ;; Using quelpa:
-(use-package swagg :quelpa (swagg :fetcher github :repo "isamert/swagg.el"))
+(use-package swagg
+  :quelpa (swagg
+           :fetcher github
+           :repo "isamert/swagg.el"))
 #+end_src
 
 YAML definitions use [[https://github.com/isamert/yml.el][yml.el]], which requires Emacs dynamic-module support. After installing swagg, run ~M-x yml-install-module~ to download a prebuilt module or build it locally. Building locally requires Rust 1.88 or newer and Cargo.
